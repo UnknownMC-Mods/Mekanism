@@ -87,9 +87,12 @@ repositories {
 }
 
 group = "mekanism"
-version = "${minecraft_version}-${mod_version}." + (System.env.BUILD_NUMBER ?: "unknownmc")
+version = "${minecraft_version}-${mod_version}"
 archivesBaseName = "MekanismAll"
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
+
+if (System.getenv().BUILD_NUMBER)
+    version += "." + System.getenv().BUILD_NUMBER
 
 def explodedVersion = mod_version.split("\\.")
 
@@ -154,8 +157,8 @@ processResources {
     rename '(.+_at.cfg)', 'META-INF/$1'
 }
 
-def setMainManifestProps = { Manifest manifest->
-    manifest.attributes (
+def setMainManifestProps = { Manifest manifest ->
+    manifest.attributes(
             'FMLAT': 'mekanism_at.cfg',
             'FMLCorePluginContainsFMLMod': 'true',
             'FMLCorePlugin': 'mekanism.coremod.MekanismCoremod'
@@ -173,7 +176,7 @@ task coreJar(type: Jar) {
 
     from('etc/core') {
         include '*.info'
-        expand 'version':project.version,'mc_version':minecraft_version,'mcmp_version':mcmp_version
+        expand 'version': project.version, 'mc_version': minecraft_version, 'mcmp_version': mcmp_version
     }
 
     from zipTree(jar.outputs.getFiles().getSingleFile()).matching {
@@ -190,7 +193,7 @@ task toolsJar(type: Jar) {
 
     from('etc/tools') {
         include '*.info'
-        expand 'version':project.version,'mc_version':minecraft_version,'mcmp_version':mcmp_version
+        expand 'version': project.version, 'mc_version': minecraft_version, 'mcmp_version': mcmp_version
     }
 
     from zipTree(jar.outputs.getFiles().getSingleFile()).matching {
@@ -205,7 +208,7 @@ task generatorsJar(type: Jar) {
 
     from('etc/generators') {
         include '*.info'
-        expand 'version':project.version,'mc_version':minecraft_version,'mcmp_version':mcmp_version
+        expand 'version': project.version, 'mc_version': minecraft_version, 'mcmp_version': mcmp_version
     }
 
     from zipTree(jar.outputs.getFiles().getSingleFile()).matching {
@@ -243,10 +246,10 @@ runServer {
 }
 
 uploadArchives {
-    if(System.getenv("LOCAL_MAVEN") != null) {
+    if (System.getenv("LOCAL_MAVEN") != null) {
         repositories {
             mavenDeployer {
-                repository(url: "file://"+System.getenv("LOCAL_MAVEN"))
+                repository(url: "file://" + System.getenv("LOCAL_MAVEN"))
                 pom {
                     groupId = project.group
                     version = project.version
@@ -297,8 +300,9 @@ if (System.getenv("CURSEFORGE_KEY") != null || project.hasProperty('curseforgeKe
                 range(prevCommit, currentCommit)
             }.reverse().each { commit ->
                 String message = commit.shortMessage
-                if (!message.startsWith("Merge branch") && !message.startsWith("Merge pull request")) {//Ignore PRs and Merges
-                    message = message.replaceAll("#(\\d+)", {match->//turn issues/prs into links (github currently supports prs being linked as issues)
+                if (!message.startsWith("Merge branch") && !message.startsWith("Merge pull request")) {
+//Ignore PRs and Merges
+                    message = message.replaceAll("#(\\d+)", { match ->//turn issues/prs into links (github currently supports prs being linked as issues)
                         return "<a href=\"https://github.com/mekanism-mod/Mekanism/issues/${match[1]}\">${match[0]}</a>"
                     })
                     generatedChangelog += "<a href=\"https://github.com/mekanism-mod/Mekanism/commit/${commit.id}\">${commit.getAbbreviatedId()}</a> - ${message}\n"
@@ -309,7 +313,7 @@ if (System.getenv("CURSEFORGE_KEY") != null || project.hasProperty('curseforgeKe
         }
 
         def releaseNotesFile = project.file("docs/release_${mod_version}.html")
-        if (releaseNotesFile.exists()){
+        if (releaseNotesFile.exists()) {
             def releaseNotes = releaseNotesFile.getText()
             generatedChangelog = "$releaseNotes<br> $generatedChangelog"
         }
@@ -321,7 +325,7 @@ if (System.getenv("CURSEFORGE_KEY") != null || project.hasProperty('curseforgeKe
             changelog = generatedChangelog
             // A file can also be set using: changelog = file('changelog.txt')
             releaseType = 'release'
-            mainArtifact (coreJar){
+            mainArtifact(coreJar) {
                 relations {
                     optionalDependency "jei"
                     optionalDependency "crafttweaker"
@@ -348,7 +352,7 @@ if (System.getenv("CURSEFORGE_KEY") != null || project.hasProperty('curseforgeKe
             changelogType = "html"
             changelog = generatedChangelog
             releaseType = 'release'
-            mainArtifact(toolsJar){
+            mainArtifact(toolsJar) {
                 relations {
                     requiredDependency "mekanism"
                 }
